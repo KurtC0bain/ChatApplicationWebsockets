@@ -1,0 +1,130 @@
+﻿@{
+    ViewData["Title"] = "Chat";
+}
+
+<ul id="messages"></ul>
+
+<body>
+    <link rel="stylesheet" href="css/site.css">
+    <section class="msger">
+    <header class="msger-header">
+        <div class="msger-header-title">
+            <i class="fas fa-comment-alt"></i> SimpleChat
+        </div>
+        <div class="msger-header-options">
+            <span><i class="fas fa-cog"></i></span>
+        </div>
+    </header>
+
+    <main class="msger-chat">
+    </main>
+
+    <form id="messageSubmit" class="msger-inputarea" onsubmit="onSubmit(); return false;">
+        <input id="textInput" type="text" class="msger-input" placeholder="Enter your message...">
+        <button id="sendButton" type="button" class="msger-send-btn">Send</button>
+    </form>
+</section>
+<script language="javascript" type="text/javascript">
+      
+
+    var uri = "ws://" + window.location.host + "/ws";
+    var socket = new WebSocket(uri);
+
+    var userIcon = "https://cdn-icons-png.flaticon.com/512/4153/4153627.png";
+
+    var list = document.getElementById("messages");
+    var button = document.getElementById("sendButton");
+    var msgerChat = get(".msger-chat");
+
+
+    function get(selector, root = document) {
+        return root.querySelector(selector);
+    }
+
+    function connect() {
+
+        socket.onopen = function(event) {
+            console.log("opened connection to " + uri);
+        };
+
+        socket.onclose = function(event) {
+            console.log("closed connection from " + uri);
+        };
+
+        socket.onmessage = function(event) {
+            if (typeof event.data !== 'undefined') {
+                var splited = event.data.split(":");
+                var userName = splited[0];
+                var message = splited[1];
+                appendMessage(userName, userIcon, message);
+
+                appendItem(list, event.data);
+                console.log(event.data);
+            }
+        };
+
+        socket.onerror = function(event) {
+            console.log("error: " + event.data);
+        };
+    }
+
+    function sendMessage(message) {
+        console.log("Sending: " + message);
+        socket.send(message);
+    }
+
+    function appendItem(list, message) {
+        var item = document.createElement("li");
+        item.appendChild(document.createTextNode(message));
+        list.appendChild(item);
+    }
+
+    function appendMessage(name, img, text) {
+        var messageHtmlContent = `<div class="msg-text">${text}</div>`;
+        if (typeof text === "undefined")
+        {
+            messageHtmlContent = '';
+        }
+
+        const msgHTML = `
+            <div class="msg left-msg">
+                <div class="msg-img" style="background-image: url(${img})"></div>
+                <div class="msg-bubble">
+                    <div class="msg-info">
+                        <div class="msg-info-name">${name}</div>
+                        <div class="msg-info-time">${formatDate(new Date())}</div>
+                    </div>
+                    ${messageHtmlContent}
+                </div>
+            </div>
+            `;
+
+        msgerChat.insertAdjacentHTML("beforeend", msgHTML);
+        msgerChat.scrollTop += 500;
+    }
+
+    connect();
+    function onSubmit() {
+        var input = document.getElementById("textInput");
+        sendMessage(input.value);
+
+        input.value = "";
+    }
+    button.addEventListener("click",onSubmit);
+    
+    
+
+    function get(selector, root = document) {
+        return root.querySelector(selector);
+    }
+
+    function formatDate(date) {
+        const h = "0" + date.getHours();
+        const m = "0" + date.getMinutes();
+
+        return `${h.slice(-2)}:${m.slice(-2)}`;
+    }
+
+</script>
+</body>
+
